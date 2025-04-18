@@ -1,8 +1,8 @@
 #include "board.h"
 
-#define HEIGHT          8
-#define WIDTH           8
-#define NUM_OF_BOMBS    10
+#define HEIGHT          16
+#define WIDTH           30
+#define NUM_OF_BOMBS    99
 
 int main(void)
 {
