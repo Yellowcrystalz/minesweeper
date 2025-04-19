@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "board.h"
 
@@ -9,12 +10,12 @@
 
 int main(void)
 {
-    int8_t hidden_board[HEIGHT * WIDTH] = {false};
     int8_t board[HEIGHT * WIDTH] = {0};
+    int8_t visible_board[HEIGHT * WIDTH] = {0};
 
-    InitializeBoard(board, HEIGHT, WIDTH, NUM_OF_BOMBS);
-    RevealBoard(board, hidden_board, HEIGHT, WIDTH, 9);
-    DisplayBoard(board, hidden_board, HEIGHT, WIDTH);
+    InitializeBoard(board, visible_board, HEIGHT, WIDTH, NUM_OF_BOMBS);
+    RevealTile(board, visible_board, HEIGHT, WIDTH, 9);
+    DisplayBoard(board, visible_board, HEIGHT, WIDTH);
 
     return 0;
 }

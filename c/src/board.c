@@ -7,16 +7,16 @@
 #include "board.h"
 
 
-void IncrementBombs(int8_t *board, uint8_t height, uint8_t width, uint16_t bomb_index)
+void GetNeighborIndicies(int16_t *neighbor_indicies, uint8_t height, uint8_t width, uint16_t tile_index)
 {
-    uint8_t x = bomb_index % width;
-    uint8_t y = bomb_index / width;
+    uint8_t x = tile_index % width;
+    uint8_t y = tile_index / width;
 
     int8_t offset[8] = { -1, -1, -1, 0, 1, 1, 1, 0 };
-    int8_t x_offset = {0};
-    int8_t y_offset = {0};
+    int8_t x_offset = 0;
+    int8_t y_offset = 0;
     
-    uint16_t index = {0};
+    uint16_t index = 0;
 
     for (uint8_t i = 0; i < 8; i++) {
         x_offset = x + offset[(i + 2) % 8];
@@ -28,21 +28,32 @@ void IncrementBombs(int8_t *board, uint8_t height, uint8_t width, uint16_t bomb_
             x_offset >= width ||
             y_offset >= height
         ) {
-            continue;
+            neighbor_indicies[i] = -1;
         }
-
-        index = (y_offset * width) + x_offset;
-
-        if (board[index] == -1) {
-            continue;
+        else {
+            index = (y_offset * width) + x_offset;
+            neighbor_indicies[i] = index;
         }
-
-        board[index]++;
     }
 }
 
 
-void InitializeBoard(int8_t *board, uint8_t height, uint8_t width, uint8_t num_of_bombs)
+void IncrementBombs(int8_t *board, uint8_t height, uint8_t width, uint16_t bomb_index)
+{
+    int16_t neighbor_indicies[8] = {0};
+    GetNeighborIndicies(neighbor_indicies, height, width, bomb_index);
+
+    for (uint8_t i = 0; i < 8; i++) {
+        if (neighbor_indicies[i] == -1 || board[neighbor_indicies[i]] == -1) {
+            continue;
+        }
+
+        board[neighbor_indicies[i]]++;
+    }
+}
+
+
+void InitializeBoard(int8_t *board, int8_t *visible_board, uint8_t height, uint8_t width, uint8_t num_of_bombs)
 {
     srand(time(0));
 
@@ -63,18 +74,20 @@ void InitializeBoard(int8_t *board, uint8_t height, uint8_t width, uint8_t num_o
         if (board[i] == -1) {
             IncrementBombs(board, height, width, i);
         }
+
+        visible_board[i] = -2;
     }
 }
 
 
-void DisplayBoard(int8_t *board, int8_t *hidden_board, uint8_t height, uint8_t width)
+void DisplayBoard(int8_t *board, int8_t *visible_board, uint8_t height, uint8_t width)
 {
     for (uint16_t i = 0; i < height * width; i++) {
-        if (hidden_board[i]) {
-            printf("%3d", board[i]);
+        if (visible_board[i] == -2) {
+            printf("%3s", "[]");
         }
         else {
-            printf("%3s", "[]");
+            printf("%3d", visible_board[i]);
         }
 
         if (i % width == width - 1) {
@@ -93,13 +106,13 @@ void DisplayBoard(int8_t *board, int8_t *hidden_board, uint8_t height, uint8_t w
 }
 
 
-bool RevealBoard(int8_t *board, int8_t *hidden_board, uint8_t height, uint8_t width, uint16_t reveal_index)
+bool RevealTile(int8_t *board, int8_t *visible_board, uint8_t height, uint8_t width, uint16_t reveal_index)
 {
-    if (hidden_board[reveal_index]) {
+    if (visible_board[reveal_index] != -2) {
         return false;
     }
     else {
-        hidden_board[reveal_index] = true;
+        visible_board[reveal_index] = board[reveal_index];
     }
 
     if (board[reveal_index] == -1) {
@@ -111,31 +124,15 @@ bool RevealBoard(int8_t *board, int8_t *hidden_board, uint8_t height, uint8_t wi
 
     bool gameover_check = false;
 
-    uint8_t x = reveal_index % width;
-    uint8_t y = reveal_index / width;
-
-    int8_t offset[8] = { -1, -1, -1, 0, 1, 1, 1, 0 };
-    int8_t x_offset = {0};
-    int8_t y_offset = {0};
-    
-    uint16_t index = {0};
+    int16_t neighbor_indicies[8] = {0};
+    GetNeighborIndicies(neighbor_indicies, height, width, reveal_index);
 
     for (uint8_t i = 0; i < 8; i++) {
-        x_offset = x + offset[(i + 2) % 8];
-        y_offset = y + offset[i];
-
-        if (
-            x_offset < 0 ||
-            y_offset < 0 ||
-            x_offset >= width ||
-            y_offset >= height
-        ) {
+        if (neighbor_indicies[i] == -1) {
             continue;
         }
 
-        index = (y_offset * width) + x_offset;
-
-        gameover_check |= RevealBoard(board, hidden_board, height, width, index);
+        gameover_check |= RevealTile(board, visible_board, height, width, neighbor_indicies[i]);
     }
 
     return gameover_check;
