@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -66,8 +67,22 @@ void InitializeBoard(int8_t *board, uint8_t height, uint8_t width, uint8_t num_o
 }
 
 
-void DisplayBoard(int8_t *board, uint8_t height, uint8_t width)
+void DisplayBoard(int8_t *board, int8_t *hidden_board, uint8_t height, uint8_t width)
 {
+    for (uint16_t i = 0; i < height * width; i++) {
+        if (hidden_board[i]) {
+            printf("%3d", board[i]);
+        }
+        else {
+            printf("%3s", "[]");
+        }
+
+        if (i % width == width - 1) {
+            printf("\n");
+        }
+    }
+
+    printf("\n");
     for (uint16_t i = 0; i < height * width; i++) {
         printf("%3d", board[i]);
 
@@ -75,4 +90,53 @@ void DisplayBoard(int8_t *board, uint8_t height, uint8_t width)
             printf("\n");
         }
     }
+}
+
+
+bool RevealBoard(int8_t *board, int8_t *hidden_board, uint8_t height, uint8_t width, uint16_t reveal_index)
+{
+    if (hidden_board[reveal_index]) {
+        return false;
+    }
+    else {
+        hidden_board[reveal_index] = true;
+    }
+
+    if (board[reveal_index] == -1) {
+        return true;
+    }
+    else if (board[reveal_index] > 0) {
+        return false;
+    }
+
+    bool gameover_check = false;
+
+    uint8_t x = reveal_index % width;
+    uint8_t y = reveal_index / width;
+
+    int8_t offset[8] = { -1, -1, -1, 0, 1, 1, 1, 0 };
+    int8_t x_offset = {0};
+    int8_t y_offset = {0};
+    
+    uint16_t index = {0};
+
+    for (uint8_t i = 0; i < 8; i++) {
+        x_offset = x + offset[(i + 2) % 8];
+        y_offset = y + offset[i];
+
+        if (
+            x_offset < 0 ||
+            y_offset < 0 ||
+            x_offset >= width ||
+            y_offset >= height
+        ) {
+            continue;
+        }
+
+        index = (y_offset * width) + x_offset;
+
+        gameover_check |= RevealBoard(board, hidden_board, height, width, index);
+    }
+
+    return gameover_check;
 }
